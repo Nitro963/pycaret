@@ -27,7 +27,6 @@ from pycaret.containers.models.classification import (
     get_container_default_engines,
 )
 from pycaret.internal.display import CommonDisplay
-from pycaret.internal.logging import get_logger
 from pycaret.internal.meta_estimators import (
     CustomProbabilityThresholdClassifier,
     get_estimator_from_meta_estimator,
@@ -48,8 +47,6 @@ from pycaret.utils.generic import (
     highlight_setup,
 )
 
-LOGGER = get_logger()
-
 
 class ClassificationExperiment(_NonTSSupervisedExperiment, Preprocessor):
     _create_app_predict_kwargs = {"raw_score": True}
@@ -63,6 +60,7 @@ class ClassificationExperiment(_NonTSSupervisedExperiment, Preprocessor):
         )
         self._available_plots = {
             "pipeline": "Pipeline Plot",
+            "interactive_pipeline": "Pipeline",
             "parameter": "Hyperparameters",
             "auc": "AUC",
             "confusion_matrix": "Confusion Matrix",
@@ -1049,6 +1047,7 @@ class ClassificationExperiment(_NonTSSupervisedExperiment, Preprocessor):
         engine: Optional[Dict[str, str]] = None,
         verbose: bool = True,
         parallel: Optional[ParallelBackend] = None,
+        on_model_training_start_callback: Optional[Callable] = None,
     ) -> Union[Any, List[Any]]:
         """
         This function trains and evaluates performance of all estimators available in the
@@ -1202,6 +1201,7 @@ class ClassificationExperiment(_NonTSSupervisedExperiment, Preprocessor):
                 probability_threshold=probability_threshold,
                 parallel=parallel,
                 caller_params=caller_params,
+                on_model_training_start_callback=on_model_training_start_callback,
             )
         finally:
             if engine is not None:

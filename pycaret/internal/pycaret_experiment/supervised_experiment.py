@@ -1,9 +1,3 @@
-# Copyright (C) 2019-2024 PyCaret
-# Author: Moez Ali (moez.ali@queensu.ca)
-# Contributors (https://github.com/pycaret/pycaret/graphs/contributors)
-# License: MIT
-
-
 import datetime
 import gc
 import os
@@ -47,7 +41,7 @@ from pycaret.internal.distributions import (
     get_skopt_distributions,
     get_tune_distributions,
 )
-from pycaret.internal.logging import get_logger, redirect_output
+from pycaret.internal.logging import redirect_output
 from pycaret.internal.meta_estimators import (
     CustomProbabilityThresholdClassifier,
     get_estimator_from_meta_estimator,
@@ -81,8 +75,6 @@ try:
     from collections.abc import Iterable
 except Exception:
     from collections import Iterable
-
-LOGGER = get_logger()
 
 
 class _SupervisedExperiment(_TabularExperiment):
@@ -343,7 +335,7 @@ class _SupervisedExperiment(_TabularExperiment):
                         if x in greater_is_worse_columns
                     ],
                 )
-                .map(highlight_cols, subset=["TT (Sec)"])
+                .applymap(highlight_cols, subset=["TT (Sec)"])
             )
         else:
             return pd.DataFrame().style
@@ -397,6 +389,7 @@ class _SupervisedExperiment(_TabularExperiment):
         verbose: bool = True,
         parallel: Optional[ParallelBackend] = None,
         caller_params: Optional[dict] = None,
+        on_model_training_start_callback: Optional[Callable] = None,
     ) -> List[Any]:
         """
         This function train all the models available in the model library and scores them
@@ -748,7 +741,8 @@ class _SupervisedExperiment(_TabularExperiment):
                 else str(i)
             )
             model_name = self._get_model_name(model)
-
+            if on_model_training_start_callback is not None:
+                on_model_training_start_callback(model_name)
             if isinstance(model, str):
                 self.logger.info(f"Initializing {model_name}")
             else:

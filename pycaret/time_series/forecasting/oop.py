@@ -42,7 +42,7 @@ from pycaret.containers.models.time_series import (
 )
 from pycaret.internal.display import CommonDisplay
 from pycaret.internal.distributions import get_base_distributions
-from pycaret.internal.logging import get_logger, redirect_output
+from pycaret.internal.logging import redirect_output
 from pycaret.internal.parallel.parallel_backend import ParallelBackend
 from pycaret.internal.plots.time_series import _get_plot
 from pycaret.internal.plots.utils.time_series import (
@@ -93,8 +93,6 @@ from pycaret.utils.time_series.forecasting.pipeline import (
     _get_imputed_data,
     _get_pipeline_estimator_label,
 )
-
-LOGGER = get_logger()
 
 
 class TSForecastingExperiment(_TSSupervisedExperiment, TSForecastingPreprocessor):
@@ -2213,6 +2211,7 @@ class TSForecastingExperiment(_TSSupervisedExperiment, TSForecastingPreprocessor
         engine: Optional[Dict[str, str]] = None,
         verbose: bool = True,
         parallel: Optional[ParallelBackend] = None,
+        on_model_training_start_callback: Optional[Callable] = None,
     ):
         """
         This function trains and evaluates performance of all estimators available in the
@@ -2344,6 +2343,7 @@ class TSForecastingExperiment(_TSSupervisedExperiment, TSForecastingPreprocessor
                 verbose=verbose,
                 parallel=parallel,
                 caller_params=caller_params,
+                on_model_training_start_callback=on_model_training_start_callback,
             )
         finally:
             if engine is not None:
@@ -3362,7 +3362,7 @@ class TSForecastingExperiment(_TSSupervisedExperiment, TSForecastingPreprocessor
 
         weights: list, default = None
             Sequence of weights (float or int) to apply to the individual model
-            predictions. Uses uniform weights when None. Note that weights only
+            predictons. Uses uniform weights when None. Note that weights only
             apply 'mean', 'gmean' and 'median' methods.
 
 

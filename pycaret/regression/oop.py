@@ -1,18 +1,13 @@
-# Copyright (C) 2019-2024 PyCaret
-# Author: Moez Ali (moez.ali@queensu.ca)
-# Contributors (https://github.com/pycaret/pycaret/graphs/contributors)
-# License: MIT
-
-
 import logging
 import re
 import time
-from collections.abc import Callable
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np  # type: ignore
 import pandas as pd
 from joblib.memory import Memory
+from matplotlib.figure import Figure as MatplotlibFigure
+from plotly.graph_objs import Figure as PlotlyFigure
 
 from pycaret.containers.metrics.regression import get_all_metric_containers
 from pycaret.containers.models.regression import (
@@ -21,7 +16,6 @@ from pycaret.containers.models.regression import (
     get_container_default_engines,
 )
 from pycaret.internal.display import CommonDisplay
-from pycaret.internal.logging import get_logger
 from pycaret.internal.parallel.parallel_backend import ParallelBackend
 
 # Own module
@@ -33,8 +27,6 @@ from pycaret.internal.pycaret_experiment.non_ts_supervised_experiment import (
 from pycaret.loggers.base_logger import BaseLogger
 from pycaret.utils.constants import DATAFRAME_LIKE, SEQUENCE_LIKE, TARGET_LIKE
 from pycaret.utils.generic import MLUsecase, highlight_setup
-
-LOGGER = get_logger()
 
 
 class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
@@ -168,9 +160,9 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
         Example
         -------
         >>> from pycaret.datasets import get_data
-        >>> insurance = get_data('insurance')
-        >>> from pycaret.regression import *
-        >>> exp_name = setup(data = insurance,  target = 'charges')
+        >>> juice = get_data('juice')
+        >>> from pycaret.classification import *
+        >>> exp_name = setup(data = juice,  target = 'Purchase')
 
 
         data: dataframe-like = None
@@ -361,7 +353,7 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
 
         group_features: dict or None, default = None
             When the dataset contains features with related characteristics,
-            add new features with the following statistical properties of that
+            add new fetaures with the following statistical properties of that
             group: min, max, mean, std, median and mode. The parameter takes a
             dict with the group name as key and a list of feature names
             belonging to that group as value.
@@ -501,11 +493,11 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
 
         custom_pipeline: list of (str, transformer), dict or Pipeline, default = None
             Addidiotnal custom transformers. If passed, they are applied to the
-            pipeline last, after all the built-in transformers.
+            pipeline last, after all the build-in transformers.
 
 
         custom_pipeline_position: int, default = -1
-            Position of the custom pipeline in the overall preprocessing pipeline.
+            Position of the custom pipeline in the overal preprocessing pipeline.
             The default value adds the custom pipeline last.
 
 
@@ -1004,6 +996,7 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
         engine: Optional[Dict[str, str]] = None,
         verbose: bool = True,
         parallel: Optional[ParallelBackend] = None,
+        on_model_training_start_callback: Optional[Callable] = None,
     ):
         """
         This function trains and evaluates performance of all estimators available in the
@@ -1143,6 +1136,7 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
                 verbose=verbose,
                 parallel=parallel,
                 caller_params=caller_params,
+                on_model_training_start_callback=on_model_training_start_callback,
             )
 
         finally:
@@ -1855,14 +1849,15 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
         estimator,
         plot: str = "residuals",
         scale: float = 1,
-        save: bool = False,
+        save: bool | str = False,
         fold: Optional[Union[int, Any]] = None,
         fit_kwargs: Optional[dict] = None,
         plot_kwargs: Optional[dict] = None,
         groups: Optional[Union[str, Any]] = None,
         verbose: bool = True,
         display_format: Optional[str] = None,
-    ) -> Optional[str]:
+        return_fig: bool = False,
+    ) -> Optional[Union[str, MatplotlibFigure, PlotlyFigure]]:
         """
         This function analyzes the performance of a trained model on holdout set.
         It may require re-training the model in certain cases.
@@ -1944,9 +1939,12 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
             To display plots in Streamlit (https://www.streamlit.io/), set this to 'streamlit'.
             Currently, not all plots are supported.
 
+        return_fig: bool, defautl = False
+            whither or not return the rendered figure object
 
         Returns:
             Path to saved file, if any.
+            Or, rendered figure object if return_fig is true
 
         """
 
@@ -1961,6 +1959,7 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
             groups=groups,
             verbose=verbose,
             display_format=display_format,
+            return_fig=return_fig,
         )
 
     def evaluate_model(
@@ -2738,9 +2737,9 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
         Example
         -------
         >>> from pycaret.datasets import get_data
-        >>> insurance = get_data('insurance')
-        >>> from pycaret.regression import *
-        >>> exp_name = setup(data = insurance,  target = 'charges')
+        >>> juice = get_data('juice')
+        >>> from pycaret.classification import *
+        >>> exp_name = setup(data = juice,  target = 'Purchase')
         >>> lr = create_model('lr')
         >>> dashboard(lr)
 
@@ -2786,7 +2785,7 @@ class RegressionExperiment(_NonTSSupervisedExperiment, Preprocessor):
 
         from explainerdashboard import ExplainerDashboard, RegressionExplainer
 
-        # Replacing chars which dash doesnt accept for column name `.` , `{`, `}`
+        # Replaceing chars which dash doesnt accept for column name `.` , `{`, `}`
         X_test_df = self.X_test_transformed.copy()
         X_test_df.columns = [
             col.replace(".", "__").replace("{", "__").replace("}", "__")
